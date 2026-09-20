@@ -47,3 +47,20 @@ def test_empty_library_yields_nothing():
     from spotify_organizer.models import Library
 
     assert discover_suggestions(Library(tracks=[])) == []
+
+
+def test_suggestions_without_genres_use_years_names_and_save_dates():
+    library = diverse_library(now=NOW)
+    for track in library.tracks:
+        track.genres = []
+    for artist in library.top_artists:
+        artist.genres = []
+    suggestions = discover_suggestions(library, now=NOW)
+    assert 5 <= len(suggestions) <= 10
+    kinds = {item.kind for item in suggestions}
+    assert "genre" not in kinds
+    assert "genre_decade" not in kinds
+    assert kinds & {"decade", "artist", "recent", "saved_year", "top_artists"}
+    for item in suggestions:
+        assert item.approx_track_count >= 5
+        assert item.track_uris

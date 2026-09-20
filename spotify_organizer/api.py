@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable, Iterable, Iterator
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -32,8 +31,9 @@ class SpotifyClient:
     """Thin Web API client that respects Feb 2026 Dev Mode endpoint changes.
 
     Extended Quota apps can still use batch GETs and `/playlists/{id}/tracks`.
-    Development Mode apps must use single-resource GETs and `/playlists/{id}/items`.
-    This client tries the efficient path first and falls back automatically.
+    Development Mode rejects batch `GET /artists` (typically 403). This client
+    tries the batch path once and, on 403/404/405, leaves genres empty rather
+    than issuing thousands of `GET /artists/{id}` calls.
     """
 
     def __init__(
@@ -142,12 +142,13 @@ class SpotifyClient:
         artist_ids: Iterable[str],
         *,
         cache_path: Path | None = ARTIST_GENRE_CACHE,
-        workers: int = 6,
     ) -> dict[str, list[str]]:
         """Resolve genres for unique artist IDs.
 
-        Tries GET /artists?ids=… (50/id batch, Extended Quota) and falls back to
-        concurrent GET /artists/{id} when that batch endpoint is gone (Dev Mode).
+        Tries GET /artists?ids=… (50/id batch, Extended Quota). When that
+        endpoint is blocked (Dev Mode 403/404/405), missing IDs get empty
+        genre lists. Analyze then clusters on years, artist names, and save
+        dates. Per-artist GET /artists/{id} is intentionally not used.
         """
         unique = [aid for aid in dict.fromkeys(artist_ids) if aid]
         genres = _load_genre_cache(cache_path)
@@ -158,29 +159,25 @@ class SpotifyClient:
         if self._batch_artists_supported is not False:
             fetched, used_batch = self._try_batch_artists(missing)
             genres.update(fetched)
+            self._batch_artists_supported = used_batch
             if used_batch:
-                self._batch_artists_supported = True
-                missing = [aid for aid in unique if aid not in genres]
-            else:
-                self._batch_artists_supported = False
+                _save_genre_cache(cache_path, genres)
 
-        if missing:
-            fetched = self._fetch_artists_individually(missing, workers=workers)
-            genres.update(fetched)
-
-        _save_genre_cache(cache_path, genres)
-        return {aid: genres.get(aid, []) for aid in unique}
+        # Missing IDs (Dev Mode or absent from a batch payload) stay empty.
+        # Do not persist those placeholders, so a later Extended Quota run can fill them.
+        return {aid: list(genres.get(aid, [])) for aid in unique}
 
     def _try_batch_artists(self, artist_ids: list[str]) -> tuple[dict[str, list[str]], bool]:
         out: dict[str, list[str]] = {}
+        unavailable = {403, 404, 405}
         for chunk in _chunks(artist_ids, ARTIST_BATCH_LIMIT):
             response = self.request(
                 "GET",
                 "/artists",
                 params={"ids": ",".join(chunk)},
-                allow_statuses=(404, 405),
+                allow_statuses=(403, 404, 405),
             )
-            if response.status_code in {404, 405}:
+            if response.status_code in unavailable:
                 return out, False
             payload = response.json()
             for artist in payload.get("artists") or []:
@@ -190,23 +187,6 @@ class SpotifyClient:
                 if aid:
                     out[str(aid)] = list(artist.get("genres") or [])
         return out, True
-
-    def _fetch_artists_individually(
-        self, artist_ids: list[str], *, workers: int
-    ) -> dict[str, list[str]]:
-        out: dict[str, list[str]] = {}
-
-        def one(artist_id: str) -> tuple[str, list[str]]:
-            payload = self.get_json(f"/artists/{artist_id}")
-            return artist_id, list(payload.get("genres") or [])
-
-        worker_count = max(1, min(workers, len(artist_ids)))
-        with ThreadPoolExecutor(max_workers=worker_count) as pool:
-            futures = [pool.submit(one, aid) for aid in artist_ids]
-            for future in as_completed(futures):
-                artist_id, artist_genres = future.result()
-                out[artist_id] = artist_genres
-        return out
 
     def get_top_artists(
         self, *, time_range: str = "medium_term", limit: int = 50
@@ -328,8 +308,13 @@ def scan_liked_songs(
 
     artist_ids = [aid for track in tracks for aid in track.artist_ids()]
     unique_artists = len(set(artist_ids))
-    log(f"Fetching genres for {unique_artists} unique artists…")
+    log(f"Resolving genres for {unique_artists} unique artists (batch GET /artists)…")
     genres = client.fetch_artist_genres(artist_ids)
+    if unique_artists and client._batch_artists_supported is False:
+        log(
+            "Batch GET /artists is unavailable (Dev Mode 403/404/405). "
+            "Skipping per-artist fetches; clustering by year, artist name, and save date."
+        )
     for track in tracks:
         seen: list[str] = []
         for aid in track.artist_ids():

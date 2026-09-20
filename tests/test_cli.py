@@ -55,6 +55,29 @@ def test_apply_without_flag_refuses(tmp_path: Path, capsys):
     assert "Refusing" in captured.err or "Refusing" in captured.out
 
 
+def test_apply_paste_auth_without_flag_still_refuses(tmp_path: Path, capsys, monkeypatch):
+    library = diverse_library()
+    suggestions = discover_suggestions(library)
+    report_dir = tmp_path / "reports"
+    write_reports(library, suggestions, report_dir, dry_run=True)
+
+    monkeypatch.setattr(
+        "spotify_organizer.cli._client",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("must not auth")),
+    )
+    code = main(
+        [
+            "apply",
+            "--paste-auth",
+            "--suggestions",
+            str(report_dir / "suggestions.json"),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert code == 2
+    assert "Refusing" in captured.err or "Refusing" in captured.out
+
+
 def test_default_command_is_analyze(tmp_path: Path):
     library = diverse_library()
     snapshot = tmp_path / "library.json"
