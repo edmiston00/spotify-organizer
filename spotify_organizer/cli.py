@@ -7,7 +7,7 @@ from pathlib import Path
 from spotify_organizer import __version__
 from spotify_organizer.api import SpotifyClient, scan_liked_songs
 from spotify_organizer.apply import APPLY_REFUSAL, ApplyRefused, apply_suggestions
-from spotify_organizer.auth import build_oauth
+from spotify_organizer.auth import AuthError, build_oauth, ensure_login
 from spotify_organizer.config import ConfigError, load_settings
 from spotify_organizer.reports import load_library, load_suggestions, write_reports
 from spotify_organizer.suggest import discover_suggestions
@@ -24,7 +24,12 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_analyze(args)
         if args.command == "apply":
             return _cmd_apply(args)
+        if args.command == "auth":
+            return _cmd_auth(args)
     except ConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except AuthError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     except ApplyRefused as exc:
@@ -37,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _default_analyze(argv: list[str]) -> list[str]:
-    commands = {"analyze", "apply"}
+    commands = {"analyze", "apply", "auth"}
     if not argv:
         return ["analyze"]
     if argv[0] in commands or argv[0] in {"-h", "--help", "--version"}:
@@ -94,7 +99,15 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze.add_argument(
         "--no-browser",
         action="store_true",
-        help="Print the OAuth URL instead of opening a browser.",
+        help="Print the OAuth URL instead of opening a browser (still uses the localhost listener).",
+    )
+    analyze.add_argument(
+        "--paste-auth",
+        action="store_true",
+        help=(
+            "Phone-friendly login: print the authorize URL and paste the redirect "
+            "URL or code. Does not open a browser or listen on 127.0.0.1."
+        ),
     )
 
     apply = sub.add_parser(
@@ -126,7 +139,33 @@ def _build_parser() -> argparse.ArgumentParser:
     apply.add_argument(
         "--no-browser",
         action="store_true",
-        help="Print the OAuth URL instead of opening a browser.",
+        help="Print the OAuth URL instead of opening a browser (still uses the localhost listener).",
+    )
+    apply.add_argument(
+        "--paste-auth",
+        action="store_true",
+        help=(
+            "Phone-friendly login: print the authorize URL and paste the redirect "
+            "URL or code. Does not open a browser or listen on 127.0.0.1."
+        ),
+    )
+
+    auth = sub.add_parser(
+        "auth",
+        help="Log in to Spotify and write the token cache (no playlist analysis).",
+    )
+    auth.add_argument(
+        "--paste",
+        action="store_true",
+        help=(
+            "Phone-friendly login: print the authorize URL, then paste the "
+            "redirect URL or code. Does not open a browser or listen on localhost."
+        ),
+    )
+    auth.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Print the OAuth URL instead of opening a browser (still uses the localhost listener).",
     )
     return parser
 
@@ -136,7 +175,10 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         library = load_library(args.library_json)
         print(f"Loaded {library.track_count} tracks from {args.library_json}")
     else:
-        client = _client(open_browser=not args.no_browser)
+        client = _client(
+            open_browser=not args.no_browser,
+            paste_auth=args.paste_auth,
+        )
         library = scan_liked_songs(
             client,
             include_top_artists=not args.no_top_artists,
@@ -197,7 +239,10 @@ def _cmd_apply(args: argparse.Namespace) -> int:
         print(APPLY_REFUSAL)
         return 2
 
-    client = _client(open_browser=not args.no_browser)
+    client = _client(
+        open_browser=not args.no_browser,
+        paste_auth=args.paste_auth,
+    )
     report = apply_suggestions(
         client,
         suggestions,
@@ -216,9 +261,23 @@ def _cmd_apply(args: argparse.Namespace) -> int:
     return 0
 
 
-def _client(*, open_browser: bool) -> SpotifyClient:
+def _cmd_auth(args: argparse.Namespace) -> int:
     settings = load_settings()
-    oauth = build_oauth(settings, open_browser=open_browser)
+    oauth = build_oauth(settings, open_browser=not args.no_browser and not args.paste)
+    status = ensure_login(oauth, paste=args.paste)
+    if status == "cached":
+        print("Already authenticated. Using the local token cache.")
+    elif status == "desktop":
+        print("Login successful. Tokens saved to the local cache (not printed).")
+    return 0
+
+
+def _client(*, open_browser: bool, paste_auth: bool = False) -> SpotifyClient:
+    settings = load_settings()
+    oauth = build_oauth(settings, open_browser=open_browser and not paste_auth)
+    status = ensure_login(oauth, paste=paste_auth)
+    if paste_auth and status == "cached":
+        print("Using cached Spotify login.")
     return SpotifyClient(oauth)
 
 
