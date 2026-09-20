@@ -94,11 +94,10 @@ def parse_callback_input(raw: str) -> tuple[str, str | None]:
     if url_match:
         text = url_match.group(0).rstrip(".,);]>\"'")
 
-    looks_like_query = ("code=" in text or "error=" in text) and "://" not in text
-    if looks_like_query:
-        text = f"{DEFAULT_REDIRECT_URI}?{text.lstrip('?')}"
-    elif text.startswith("/callback"):
+    if text.startswith("/callback"):
         text = f"http://127.0.0.1:8888{text}"
+    elif "://" not in text and ("code=" in text or "error=" in text):
+        text = f"{DEFAULT_REDIRECT_URI}?{text.lstrip('?')}"
 
     if "://" in text:
         parsed = urlparse(text)
@@ -127,7 +126,7 @@ def parse_callback_input(raw: str) -> tuple[str, str | None]:
 def run_paste_auth(
     oauth: SpotifyOAuth,
     *,
-    prompt: Callable[[str], str] = input,
+    prompt: Callable[[str], str] | None = None,
     echo: Callable[[str], None] = print,
 ) -> None:
     """Print a phone-friendly authorize URL, accept a pasted callback, cache tokens.
@@ -135,6 +134,7 @@ def run_paste_auth(
     Does not open a browser and does not listen on 127.0.0.1.
     Never prints client secrets or access/refresh tokens.
     """
+    read_line = prompt or input
     if not oauth.state:
         oauth.state = secrets.token_urlsafe(24)
 
@@ -146,8 +146,8 @@ def run_paste_auth(
         )
     )
     try:
-        pasted = prompt("Paste redirect URL or code: ")
-    except EOFError as exc:
+        pasted = read_line("Paste redirect URL or code: ")
+    except (EOFError, OSError) as exc:
         raise AuthError("No input received. Paste the redirect URL or code.") from exc
 
     code, state = parse_callback_input(pasted)
