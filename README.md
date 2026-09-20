@@ -20,7 +20,7 @@ The scan uses only documented Spotify Web API endpoints. It does **not** call re
 | --- | --- | --- |
 | Liked Songs | `GET /me/tracks` | Paginated, max 50 per page. Local files and missing tracks are skipped. |
 | Album release year | `album.release_date` on each saved track | No extra album lookup. |
-| Artist genres | `GET /artists?ids=` (50/id) or `GET /artists/{id}` | Batch `GET /artists` was **removed for Development Mode** in February 2026. Extended Quota apps still have it. The client tries the batch path, then falls back to concurrent single-artist fetches with `429` / `Retry-After` backoff. |
+| Artist genres | `GET /artists?ids=` (50/id) | Batch `GET /artists` was **removed for Development Mode** in February 2026 (often **403 Forbidden**). Extended Quota apps still have it. On 403/404/405 the scan **does not** fall back to thousands of `GET /artists/{id}` calls — genres stay empty and clustering uses years, artist names, and save dates. |
 | Optional listening signal | `GET /me/top/artists` (`user-top-read`) | Still available. Used only as an overlap hint, never as a fake “taste API”. |
 | Save recency | `added_at` on saved tracks | 90-day and calendar-year “saved in” slices when they are distinctive. |
 
@@ -57,7 +57,7 @@ Suggestions are **not** a fixed taxonomy (no hardcoded “Workout / Chill / 2010
 5. Development Mode notes (as of the February 2026 Web API changes):
    - The app **owner needs Spotify Premium** or the app will not work.
    - New Dev Mode apps are limited to **5 authorized users**.
-   - Batch metadata endpoints (`GET /artists`, `GET /albums`, `GET /tracks`) are gone in Dev Mode; this CLI already handles that.
+    - Batch metadata endpoints (`GET /artists`, `GET /albums`, `GET /tracks`) are gone in Dev Mode (403). This CLI skips per-artist genre lookups and still analyzes by year / name / save date.
    - Extended Quota apps keep the older endpoints; the client is compatible with both.
 
 ## Install
