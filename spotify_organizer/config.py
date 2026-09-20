@@ -9,6 +9,15 @@ from dotenv import load_dotenv
 DEFAULT_REDIRECT_URI = "http://127.0.0.1:8888/callback"
 TOKEN_CACHE_PATH = ".spotify_token_cache"
 ARTIST_GENRE_CACHE = Path(".cache") / "spotify-organizer" / "artist_genres.json"
+MUSICBRAINZ_CACHE = Path(".cache") / "spotify-organizer" / "musicbrainz_artists.json"
+MUSICBRAINZ_BASE = "https://musicbrainz.org/ws/2"
+MUSICBRAINZ_MIN_INTERVAL = 1.1
+# Descriptive UA with contact, as required by MusicBrainz rate-limiting policy.
+MUSICBRAINZ_USER_AGENT = (
+    "SpotifyOrganizer/0.2.0 "
+    "(https://github.com/edmiston00/spotify-organizer; cedmist@gmail.com)"
+)
+PLAYLIST_NAME_PREFIX = "GB "
 
 # Analyze only needs library + optional personalization.
 # Write scopes are requested so a later `apply --apply` does not force a second login.

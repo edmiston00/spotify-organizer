@@ -1,6 +1,9 @@
 # Spotify Liked Songs Organizer
 
-A free, local Python CLI that scans **your** Spotify Liked Songs and proposes **5–10 data-driven playlists** from what is actually in that library: artist genres, album release years, save dates, and (optionally) your top artists.
+A free, local Python CLI that scans **your** Spotify Liked Songs and proposes review-first playlists.
+
+- Default `analyze` still builds **5–10 data-driven playlists** from genres, release years, and save dates when Spotify artist genres are available.
+- `analyze --style-only --allow-overlap` builds **~8–15 overlapping style playlists** from **MusicBrainz** genres/tags (plus name/co-artist fallbacks). Names are prefixed `GB `.
 
 It is a **review-first** tool. `analyze` is dry-run only. Playlists are **never** created unless you explicitly run:
 
@@ -20,11 +23,37 @@ The scan uses only documented Spotify Web API endpoints. It does **not** call re
 | --- | --- | --- |
 | Liked Songs | `GET /me/tracks` | Paginated, max 50 per page. Local files and missing tracks are skipped. |
 | Album release year | `album.release_date` on each saved track | No extra album lookup. |
-| Artist genres | `GET /artists?ids=` (50/id) or `GET /artists/{id}` | Batch `GET /artists` was **removed for Development Mode** in February 2026. Extended Quota apps still have it. The client tries the batch path, then falls back to concurrent single-artist fetches with `429` / `Retry-After` backoff. |
+| Artist genres (Spotify) | `GET /artists?ids=` (50/id) or `GET /artists/{id}` | Batch `GET /artists` was **removed for Development Mode** in February 2026. Extended Quota apps still have it. The client tries the batch path, then falls back to concurrent single-artist fetches with `429` / `Retry-After` backoff. Dev Mode often **403s**, so style clustering uses MusicBrainz instead. |
+| Artist genres (MusicBrainz) | `GET https://musicbrainz.org/ws/2/artist` search + `inc=genres+tags` lookup | No API key. **~1 request/second** and a descriptive User-Agent are required. Lookups are cached under `.cache/spotify-organizer/musicbrainz_artists.json` and can resume. |
 | Optional listening signal | `GET /me/top/artists` (`user-top-read`) | Still available. Used only as an overlap hint, never as a fake “taste API”. |
 | Save recency | `added_at` on saved tracks | 90-day and calendar-year “saved in” slices when they are distinctive. |
 
-Suggestions are **not** a fixed taxonomy (no hardcoded “Workout / Chill / 2010s Pop” list). Clusters are whatever genres, decades, artists, and save-date buckets appear in *this* library at enough volume, then diversified so you get about 5–10 distinct playlists.
+Suggestions for the default analyzer are **not** a fixed taxonomy. Style-only mode maps MusicBrainz tags onto overlapping sound clusters (Southern trap *and* Hip-Hop, House *and* Electronic) instead of date/era buckets.
+
+## MusicBrainz enrichment
+
+Spotify artist-genre fetches frequently 403 in Development Mode. Style proposals therefore look up each unique artist on [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API):
+
+1. Search `artist:"Name"` and pick a hit (exact name, skip tributes/karaoke, extra weight for known collisions such as Sublime = US ska-punk group).
+2. Lookup `inc=genres+tags`. Official **genres** plus **high-count tags** are kept; nationality/era meta-tags (`american`, `90s`, `seen live`) are ignored.
+3. If MusicBrainz is empty (common for some dance producers, e.g. Dom Dolla), fall back to a name/keyword map and co-artists on the same liked tracks. Last.fm/Discogs are not required and are not called unless you add your own keys later.
+4. Cache every result under `.cache/spotify-organizer/musicbrainz_artists.json`. Re-runs skip completed artists.
+
+Rate limit: **one request per second per IP**. A ~1,600-artist library is typically **30–60+ minutes** because each artist needs a search plus a detail lookup. That is expected. Do not parallelize; MusicBrainz will 503 and then block the IP.
+
+```bash
+# Resumable genre lookup (no Spotify writes)
+spotify-organizer enrich-genres \
+  --library-json reports/library.json \
+  --artists-json reports/unique_artists.json
+
+# Style-only overlapping proposals (dry-run)
+spotify-organizer analyze \
+  --library-json reports/library.json \
+  --style-only --allow-overlap
+```
+
+`enrich-genres` and `analyze` never create Spotify playlists. Review `reports/suggestions.json` (full URI lists, gitignored) and `reports/suggestions.sample.json` (committed preview).
 
 ## Review-first workflow
 
@@ -112,6 +141,10 @@ spotify-organizer analyze
 # Re-run suggestions from a saved snapshot (no Spotify calls)
 spotify-organizer analyze --library-json reports/library.json
 
+# MusicBrainz style clusters (overlapping, GB-prefixed names)
+spotify-organizer enrich-genres --library-json reports/library.json
+spotify-organizer analyze --library-json reports/library.json --style-only --allow-overlap
+
 # Skip top-artists call
 spotify-organizer analyze --no-top-artists
 
@@ -125,7 +158,9 @@ Outputs from `analyze` (all under `reports/` by default):
 
 - `suggestions.json` — full proposal including track URIs for a later apply
 - `suggestions.csv` — same fields without URI lists, for easy review
-- `library.json` — anonymized-enough local snapshot (track names, artists, genres, years)
+- `suggestions.sample.json` — playlist names, counts, samples, truncated URIs (safe to commit)
+- `enrichment_summary.json` — MusicBrainz hit rates after `enrich-genres`
+- `library.json` — local snapshot (track names, artists, genres, years)
 
 ### Apply behavior
 
@@ -144,4 +179,4 @@ pytest
 
 ## Privacy
 
-Everything runs locally. Tokens stay in `.spotify_token_cache`. Artist genre responses may be cached under `.cache/spotify-organizer/` to avoid re-fetching. None of these paths are committed.
+Everything runs locally. Tokens stay in `.spotify_token_cache`. Spotify and MusicBrainz artist genre responses are cached under `.cache/spotify-organizer/` so enrichment can resume after a stop. None of these cache paths are committed.
