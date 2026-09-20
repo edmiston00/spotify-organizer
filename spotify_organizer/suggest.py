@@ -6,7 +6,20 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from typing import Iterable
 
+from spotify_organizer.enrich import infer_genres_from_name
 from spotify_organizer.models import Library, Suggestion, Track
+from spotify_organizer.musicbrainz import ArtistLookup, LookupCache
+from spotify_organizer.style_map import (
+    LEFTOVER_ID,
+    MAX_STYLE_SUGGESTIONS,
+    MIN_STYLE_SUGGESTIONS,
+    PLAYLIST_BY_ID,
+    STYLE_PLAYLISTS,
+    STYLE_SAMPLE_SIZE,
+    labels_to_playlist_ids,
+    leftover_playlist,
+    primary_style_labels,
+)
 
 MIN_SUGGESTIONS = 5
 MAX_SUGGESTIONS = 10
@@ -64,6 +77,187 @@ def discover_suggestions(
                 break
 
     return selected[:max_suggestions]
+
+
+def discover_style_suggestions(
+    library: Library,
+    *,
+    cache: LookupCache | None = None,
+    min_tracks: int | None = None,
+    max_suggestions: int = MAX_STYLE_SUGGESTIONS,
+) -> list[Suggestion]:
+    """Build overlapping style playlists. No date/era/saved-year buckets."""
+    tracks = [t for t in library.tracks if t.uri]
+    if not tracks:
+        return []
+
+    max_suggestions = max(1, min(max_suggestions, MAX_STYLE_SUGGESTIONS))
+    threshold = min_tracks if min_tracks is not None else _style_min(len(tracks))
+
+    lookups = _lookups_by_artist(cache)
+    buckets: dict[str, list[Track]] = defaultdict(list)
+    sources: dict[str, Counter[str]] = defaultdict(Counter)
+    assigned: set[str] = set()
+
+    for track in tracks:
+        playlist_ids, source = _track_style_assignment(track, lookups)
+        if not playlist_ids:
+            continue
+        assigned.add(track.uri)
+        for playlist_id in playlist_ids:
+            buckets[playlist_id].append(track)
+            sources[playlist_id][source] += 1
+
+    suggestions: list[Suggestion] = []
+    for spec in STYLE_PLAYLISTS:
+        if spec.id == LEFTOVER_ID:
+            continue
+        members = _unique_tracks(buckets.get(spec.id) or [])
+        if len(members) < threshold:
+            continue
+        suggestions.append(
+            _build_style_suggestion(spec.id, members, sources[spec.id])
+        )
+
+    suggestions.sort(key=lambda item: item.approx_track_count, reverse=True)
+    leftovers = [t for t in tracks if t.uri not in assigned]
+    leftovers = _unique_tracks(leftovers)
+
+    if len(suggestions) > max_suggestions:
+        suggestions = suggestions[:max_suggestions]
+        covered = {uri for item in suggestions for uri in item.track_uris}
+        leftovers = _unique_tracks([t for t in tracks if t.uri not in covered])
+
+    if leftovers and (
+        len(leftovers) >= max(8, threshold // 2) or len(suggestions) < MIN_STYLE_SUGGESTIONS
+    ):
+        leftover_spec = leftover_playlist()
+        suggestions.append(
+            _build_style_suggestion(
+                leftover_spec.id,
+                leftovers,
+                Counter({"unlabeled": len(leftovers)}),
+            )
+        )
+
+    if len(suggestions) > max_suggestions:
+        # Keep leftovers if present; drop the smallest non-leftover.
+        leftover = [s for s in suggestions if s.kind == "style-leftover"]
+        core = [s for s in suggestions if s.kind != "style-leftover"]
+        core = core[: max_suggestions - len(leftover)]
+        suggestions = core + leftover
+
+    return suggestions
+
+
+def _style_min(library_size: int) -> int:
+    return max(18, min(40, library_size // 50 or 18))
+
+
+def _lookups_by_artist(cache: LookupCache | None) -> dict[str, ArtistLookup]:
+    if cache is None:
+        return {}
+    out: dict[str, ArtistLookup] = {}
+    for lookup in cache.artists.values():
+        if lookup.spotify_id:
+            out[lookup.spotify_id] = lookup
+        if lookup.query:
+            out[f"name:{lookup.query.casefold()}"] = lookup
+    return out
+
+
+def _track_style_assignment(
+    track: Track, lookups: dict[str, ArtistLookup]
+) -> tuple[set[str], str]:
+    labels: list[str] = []
+    source = "unlabeled"
+    saw_mb = False
+    saw_fallback = False
+    for artist in track.artists:
+        lookup = lookups.get(artist.id) or lookups.get(f"name:{artist.name.casefold()}")
+        artist_labels: list[str] = []
+        if lookup is not None:
+            artist_labels = primary_style_labels(
+                lookup.genres, lookup.tags, lookup.fallback_genres
+            )
+            if lookup.genres or lookup.tags:
+                saw_mb = True
+            elif lookup.fallback_genres:
+                saw_fallback = True
+        if not artist_labels or not labels_to_playlist_ids(artist_labels):
+            guessed = infer_genres_from_name(artist.name)
+            if guessed:
+                artist_labels = guessed
+                saw_fallback = True
+                saw_mb = False
+        labels.extend(artist_labels)
+    if not labels and track.genres:
+        labels = list(track.genres)
+        source = "track-genres"
+    playlist_ids = labels_to_playlist_ids(labels)
+    if playlist_ids:
+        if saw_mb:
+            source = "musicbrainz"
+        elif saw_fallback:
+            source = "fallback"
+        elif source == "unlabeled":
+            source = "track-genres"
+    return playlist_ids, source
+
+
+def _build_style_suggestion(
+    playlist_id: str,
+    members: list[Track],
+    sources: Counter[str],
+) -> Suggestion:
+    spec = PLAYLIST_BY_ID[playlist_id]
+    samples = _diverse_samples(members, STYLE_SAMPLE_SIZE)
+    mb = sources.get("musicbrainz", 0)
+    fallback = sources.get("fallback", 0) + sources.get("coartist", 0)
+    other = sum(sources.values()) - mb - fallback
+    if playlist_id == LEFTOVER_ID:
+        rationale = (
+            f"{len(members)} liked tracks had no mappable MusicBrainz genre/tag "
+            f"or name-based style fallback after enrichment."
+        )
+        kind = "style-leftover"
+    else:
+        rationale = (
+            f"Style cluster from MusicBrainz genres/high-count tags"
+            f"{' plus name/co-artist fallbacks' if fallback else ''}: "
+            f"{mb} tracks via MusicBrainz, {fallback} via fallback, "
+            f"{max(other, 0)} via already-tagged library genres. "
+            f"Overlapping playlists are intentional."
+        )
+        kind = "style"
+    return Suggestion(
+        id=_slug(f"style-{playlist_id}")[:80],
+        name=spec.name[:100],
+        description=spec.description[:240],
+        approx_track_count=len(members),
+        sample_tracks=samples,
+        rationale=rationale,
+        track_uris=[t.uri for t in members],
+        kind=kind,
+    )
+
+
+def _diverse_samples(members: list[Track], n: int) -> list[str]:
+    counts: Counter[str] = Counter()
+    first: dict[str, Track] = {}
+    for track in members:
+        key = track.artists[0].id if track.artists else track.id
+        counts[key] += 1
+        first.setdefault(key, track)
+    picked = [first[key] for key, _count in counts.most_common(n)]
+    if len(picked) < min(n, len(members)):
+        for track in members:
+            if track in picked:
+                continue
+            picked.append(track)
+            if len(picked) >= n:
+                break
+    return [t.sample_label() for t in picked[:n]]
 
 
 def _adaptive_min(library_size: int) -> int:

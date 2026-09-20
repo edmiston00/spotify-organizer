@@ -1,0 +1,330 @@
+{
+  "generated_at": "2026-09-20T08:53:17.535121+00:00",
+  "library_track_count": 1913,
+  "dry_run": true,
+  "note": "Sample for git review. Full track URI lists are in suggestions.json (gitignored).",
+  "suggestions": [
+    {
+      "id": "style-electronic",
+      "name": "GB Electronic & Dance",
+      "description": "Broader electronic and dance music spanning club, bass, and melodic producers.",
+      "approx_track_count": 839,
+      "sample_tracks": [
+        "Strobe - Lane 8 Remix \u2014 deadmau5, Lane 8",
+        "La Ciudad \u2014 ODESZA",
+        "Miracle - Hansa Session \u2014 CHVRCHES"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 733 tracks via MusicBrainz, 106 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:1qN5HBXkNn8sq54AgM1ZJJ",
+        "spotify:track:1y58wFuYYnVsCnY8DsOELY",
+        "spotify:track:1ZANZPVyo1MDuW3AC87bCS",
+        "spotify:track:5wzjJvNV4DpDtT53KapSLH",
+        "spotify:track:1bXJFBJRhxphB1EAtp34qW",
+        "spotify:track:6zzjk92e590Gdbrreho2kD",
+        "spotify:track:3h0RJYaohnvXg5SmWD1dZF",
+        "spotify:track:0m6A4F1mnR1HVPnzM3Tg3u"
+      ]
+    },
+    {
+      "id": "style-hip-hop",
+      "name": "GB Hip-Hop & Rap",
+      "description": "Liked hip-hop and rap \u2014 East Coast, West Coast, drill, and everything in between.",
+      "approx_track_count": 535,
+      "sample_tracks": [
+        "LITE (feat. Belly Gang Kushington) \u2014 BigXthaPlug, Belly Gang Kushington",
+        "Whatcha Gonna Do? (Intro) \u2014 The Last Mr. Bigg",
+        "Shoes \u2014 Lil Wayne"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 491 tracks via MusicBrainz, 43 via fallback, 1 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:03ZmfQWDEIfhoaIUXi5wAq",
+        "spotify:track:53ncWZgUjdAzRgMp8txGMD",
+        "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
+        "spotify:track:1eidfKTS4vuvPMBXfqKkq0",
+        "spotify:track:4ns1XFP3W5JPyzvnAjMdHD",
+        "spotify:track:2ECrnacGukfUnRDwIfTubB",
+        "spotify:track:79jaa2QGadIViTda6v5Q31",
+        "spotify:track:5h21AlYy4mgHfQp9jUAUGi"
+      ]
+    },
+    {
+      "id": "style-house-club",
+      "name": "GB House, Techno & Club",
+      "description": "House, techno, tech-house, and peak-time club tracks.",
+      "approx_track_count": 522,
+      "sample_tracks": [
+        "Strobe - Lane 8 Remix \u2014 deadmau5, Lane 8",
+        "Until the Sun Needs to Rise \u2014 R\u00dcF\u00dcS DU SOL",
+        "Superfriends \u2014 ZHU"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 455 tracks via MusicBrainz, 67 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:1qN5HBXkNn8sq54AgM1ZJJ",
+        "spotify:track:1y58wFuYYnVsCnY8DsOELY",
+        "spotify:track:6zzjk92e590Gdbrreho2kD",
+        "spotify:track:0m6A4F1mnR1HVPnzM3Tg3u",
+        "spotify:track:3t4V6O5OTQFH9geJDaETaX",
+        "spotify:track:7lhQh8sthjkO56BjEx2oDY",
+        "spotify:track:0t796F3fxvv4YfhBn6dfkY",
+        "spotify:track:50z0HWJg4sqh7H8JHol9jC"
+      ]
+    },
+    {
+      "id": "style-rock",
+      "name": "GB Rock",
+      "description": "The broader rock umbrella: classic, alternative, hard rock, and adjacent guitar music.",
+      "approx_track_count": 495,
+      "sample_tracks": [
+        "Gallows Pole - Remaster \u2014 Led Zeppelin",
+        "She \u2014 Dave Matthews Band",
+        "T.N.T. \u2014 AC/DC"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 478 tracks via MusicBrainz, 17 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:6SSJcmQgBEvHqqCivyVfqG",
+        "spotify:track:14uUTfHIwIp587cz13UI5A",
+        "spotify:track:3Sm5TYFgMXyXwgAcY2xweX",
+        "spotify:track:7oxSfM3FXCdw7EXNreNoRz",
+        "spotify:track:2LXISHBkx8FyoxCBkckh19",
+        "spotify:track:7uYNdZA4LnxEwTsmIIUCCu",
+        "spotify:track:24eRthJ3VWBI7B9cuFBdMG",
+        "spotify:track:0I2ELF6uHlL4ABu9aFiou7"
+      ]
+    },
+    {
+      "id": "style-pop-rnb",
+      "name": "GB Pop, R&B & Soul",
+      "description": "Pop, contemporary R&B, neo-soul, and vocal-led radio songs.",
+      "approx_track_count": 412,
+      "sample_tracks": [
+        "Miracle - Hansa Session \u2014 CHVRCHES",
+        "Until the Sun Needs to Rise \u2014 R\u00dcF\u00dcS DU SOL",
+        "No Face \u2014 Drake"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 390 tracks via MusicBrainz, 22 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:4ns1XFP3W5JPyzvnAjMdHD",
+        "spotify:track:5h21AlYy4mgHfQp9jUAUGi",
+        "spotify:track:4YAtIop3U0HsJ7jE94BCmX",
+        "spotify:track:7bYKMJI4z6mApjLhv4hOBM",
+        "spotify:track:0FmCLEHfINGqwlyzvklNqy",
+        "spotify:track:2NBQmPrOEEjA8VbeWOQGxO",
+        "spotify:track:0l3wp8iEtN8rgag9eTeorW",
+        "spotify:track:6SSJcmQgBEvHqqCivyVfqG"
+      ]
+    },
+    {
+      "id": "style-alt-indie",
+      "name": "GB Alternative, Grunge & Indie Rock",
+      "description": "Alternative, grunge, indie rock, and guitar-forward left-of-center songs.",
+      "approx_track_count": 406,
+      "sample_tracks": [
+        "Miracle - Hansa Session \u2014 CHVRCHES",
+        "She \u2014 Dave Matthews Band",
+        "Testify \u2014 Rage Against The Machine"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 392 tracks via MusicBrainz, 14 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:3B4cjvGlPvyBLNG3AzEgkZ",
+        "spotify:track:0FlcmZ13DGRmscCroro9GO",
+        "spotify:track:38psZM2gA6UWA7rqqgOjGL",
+        "spotify:track:2hEQRGEAx4YKGh0Kg7djab",
+        "spotify:track:5yriBaBAgiRDoTVVWazMuv",
+        "spotify:track:36idurZmYRjJ56KQ8JD9bN",
+        "spotify:track:5nj7iytZfhPMn7hZ1Kzn00",
+        "spotify:track:7lmeHLHBe4nmXzuXc0HDjk"
+      ]
+    },
+    {
+      "id": "style-melodic-electronic",
+      "name": "GB Melodic Electronic & Downtempo",
+      "description": "Melodic house, downtempo, indietronica, and late-night electronic.",
+      "approx_track_count": 399,
+      "sample_tracks": [
+        "Strobe - Lane 8 Remix \u2014 deadmau5, Lane 8",
+        "La Ciudad \u2014 ODESZA",
+        "Miracle - Hansa Session \u2014 CHVRCHES"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 365 tracks via MusicBrainz, 34 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:1ZANZPVyo1MDuW3AC87bCS",
+        "spotify:track:6zzjk92e590Gdbrreho2kD",
+        "spotify:track:3t4V6O5OTQFH9geJDaETaX",
+        "spotify:track:7lhQh8sthjkO56BjEx2oDY",
+        "spotify:track:50z0HWJg4sqh7H8JHol9jC",
+        "spotify:track:5EQCzaAbURz9BxfVdmERKd",
+        "spotify:track:37qaCT68AeIjdOobtwAIFH",
+        "spotify:track:3zePw5mWb6vO7CBkOmZRfQ"
+      ]
+    },
+    {
+      "id": "style-southern-trap",
+      "name": "GB Southern Trap & Dirty South",
+      "description": "Trap, Dirty South, Houston, Memphis, Atlanta, and Southern rap.",
+      "approx_track_count": 317,
+      "sample_tracks": [
+        "LITE (feat. Belly Gang Kushington) \u2014 BigXthaPlug, Belly Gang Kushington",
+        "Whatcha Gonna Do? (Intro) \u2014 The Last Mr. Bigg",
+        "Shoes \u2014 Lil Wayne"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 283 tracks via MusicBrainz, 34 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:03ZmfQWDEIfhoaIUXi5wAq",
+        "spotify:track:53ncWZgUjdAzRgMp8txGMD",
+        "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
+        "spotify:track:4ns1XFP3W5JPyzvnAjMdHD",
+        "spotify:track:2ECrnacGukfUnRDwIfTubB",
+        "spotify:track:79jaa2QGadIViTda6v5Q31",
+        "spotify:track:4X13MIZR2P4mon0udxgKhW",
+        "spotify:track:4YAtIop3U0HsJ7jE94BCmX"
+      ]
+    },
+    {
+      "id": "style-synth-indie-dance",
+      "name": "GB Synthpop, New Wave & Indie Dance",
+      "description": "Synth-pop, new wave, dance-punk, and indie-dance grooves.",
+      "approx_track_count": 271,
+      "sample_tracks": [
+        "La Ciudad \u2014 ODESZA",
+        "Miracle - Hansa Session \u2014 CHVRCHES",
+        "Until the Sun Needs to Rise \u2014 R\u00dcF\u00dcS DU SOL"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 252 tracks via MusicBrainz, 19 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:38psZM2gA6UWA7rqqgOjGL",
+        "spotify:track:3h0RJYaohnvXg5SmWD1dZF",
+        "spotify:track:36idurZmYRjJ56KQ8JD9bN",
+        "spotify:track:5rfJ2Bq2PEL8yBjZLzouEu",
+        "spotify:track:4TIJ7zSBNejpoIPaWpWRKc",
+        "spotify:track:2VNfJpwdEQBLyXajaa6LWT",
+        "spotify:track:5veJDT0MLsLbhYsx42GXUD",
+        "spotify:track:40dJCw4xU6Bd5ie9rfagNo"
+      ]
+    },
+    {
+      "id": "style-bass-edm",
+      "name": "GB Bass, Dubstep & Live Electronic",
+      "description": "Dubstep, bass music, future bass, and live-electronic festival cuts.",
+      "approx_track_count": 224,
+      "sample_tracks": [
+        "La Ciudad \u2014 ODESZA",
+        "We Could Be Kings \u2014 Zeds Dead, DNMO, Tzar",
+        "caritas (ov) - Dom Kane Remix \u2014 deadmau5, Dom Kane"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 212 tracks via MusicBrainz, 12 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:1ZANZPVyo1MDuW3AC87bCS",
+        "spotify:track:1bXJFBJRhxphB1EAtp34qW",
+        "spotify:track:3zePw5mWb6vO7CBkOmZRfQ",
+        "spotify:track:4boENvqDvGPWtaZKFukgAq",
+        "spotify:track:56rac2auaGeAHdNVTWVENi",
+        "spotify:track:0MXUdhxGVl4BRAhVS4Ra0Y",
+        "spotify:track:29ilvf6QjSWKUFrkXKvWM5",
+        "spotify:track:4x6aawsLyPkF3aGPXGvbat"
+      ]
+    },
+    {
+      "id": "style-classic-hard-rock",
+      "name": "GB Classic & Hard Rock",
+      "description": "Classic rock, hard rock, blues rock, and arena riffs.",
+      "approx_track_count": 219,
+      "sample_tracks": [
+        "Gallows Pole - Remaster \u2014 Led Zeppelin",
+        "T.N.T. \u2014 AC/DC",
+        "Black Hole Sun \u2014 Soundgarden"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 215 tracks via MusicBrainz, 4 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:3Sm5TYFgMXyXwgAcY2xweX",
+        "spotify:track:7oxSfM3FXCdw7EXNreNoRz",
+        "spotify:track:3DjwjAUPT4zvIu6ZzcgLGJ",
+        "spotify:track:7uYNdZA4LnxEwTsmIIUCCu",
+        "spotify:track:24eRthJ3VWBI7B9cuFBdMG",
+        "spotify:track:0I2ELF6uHlL4ABu9aFiou7",
+        "spotify:track:4cudpEOpvt73zMfJSBoNut",
+        "spotify:track:4c4jJJoaiY21t2TyRZgdWS"
+      ]
+    },
+    {
+      "id": "style-metal-punk",
+      "name": "GB Metal, Punk & Heavy",
+      "description": "Metal, punk, hardcore, and heavy alternative.",
+      "approx_track_count": 153,
+      "sample_tracks": [
+        "Testify \u2014 Rage Against The Machine",
+        "Let's Go Get Stoned \u2014 Sublime",
+        "Black Hole Sun \u2014 Soundgarden"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 142 tracks via MusicBrainz, 11 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:5yriBaBAgiRDoTVVWazMuv",
+        "spotify:track:7lmeHLHBe4nmXzuXc0HDjk",
+        "spotify:track:1XxSVil40QANKQ3b5mRARs",
+        "spotify:track:3Cx9j78Z0NE6jYwBWvvV3P",
+        "spotify:track:0Jur3mZsQba3vqSpcmsOPm",
+        "spotify:track:4paJ10JPNCyOaLtz2cY928",
+        "spotify:track:55mJleti2WfWEFNFcBduhc",
+        "spotify:track:4Uiw0Sl9yskBaC6P4DcdVD"
+      ]
+    },
+    {
+      "id": "style-jam-funk",
+      "name": "GB Jam, Funk & Groove",
+      "description": "Jam band, funk, groove rock, and psychedelic pocket.",
+      "approx_track_count": 106,
+      "sample_tracks": [
+        "She \u2014 Dave Matthews Band",
+        "Testify \u2014 Rage Against The Machine",
+        "She's a Lover \u2014 Red Hot Chili Peppers"
+      ],
+      "rationale": "Style cluster from MusicBrainz genres/high-count tags plus name/co-artist fallbacks: 101 tracks via MusicBrainz, 5 via fallback, 0 via already-tagged library genres. Overlapping playlists are intentional.",
+      "kind": "style",
+      "track_uris_preview": [
+        "spotify:track:6iTAtdjDzH8f3D1KcASfQQ",
+        "spotify:track:3DjwjAUPT4zvIu6ZzcgLGJ",
+        "spotify:track:7uYNdZA4LnxEwTsmIIUCCu",
+        "spotify:track:0I2ELF6uHlL4ABu9aFiou7",
+        "spotify:track:4gRA0i5sxx3jAhHaVjPnUN",
+        "spotify:track:4c4jJJoaiY21t2TyRZgdWS",
+        "spotify:track:6PgVDY8GTkxF3GmhVGPzoB",
+        "spotify:track:7lmeHLHBe4nmXzuXc0HDjk"
+      ]
+    },
+    {
+      "id": "style-needs-review",
+      "name": "GB Needs Review / Mixed",
+      "description": "Leftover liked tracks that still have no confident style cluster after enrichment.",
+      "approx_track_count": 260,
+      "sample_tracks": [
+        "At Night \u2014 Oliver",
+        "gravity \u2014 all things break",
+        "Monday \u2014 Mux Mool"
+      ],
+      "rationale": "260 liked tracks had no mappable MusicBrainz genre/tag or name-based style fallback after enrichment.",
+      "kind": "style-leftover",
+      "track_uris_preview": [
+        "spotify:track:7pHJ23f26nvy5ty8XosdAO",
+        "spotify:track:0CyWzH3KUpfyMZfdacUX9e",
+        "spotify:track:4FTNxtu6OmNUfeeTbFFI0f",
+        "spotify:track:7htPcNS0aRiIKL0hihZUja",
+        "spotify:track:1UKcHRPu3OZma2wFxdqIGR",
+        "spotify:track:0uf4NzcALnNu9tYdKECl1p",
+        "spotify:track:6OWFXnJJCVaQt2f0wRmuUl",
+        "spotify:track:7M7mkyK5w3z9DPwPCox4Mb"
+      ]
+    }
+  ]
+}
