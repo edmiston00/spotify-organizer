@@ -59,19 +59,65 @@ def test_parse_skips_local_and_missing_tracks():
     assert parsed.artists[0].name == "Ada"
 
 
-def test_artist_genre_batch_falls_back_to_single_fetch(tmp_path):
+def test_artist_genre_batch_success(tmp_path):
     session = ScriptedSession(
         [
-            (404, {"error": {"message": "Not Found"}}, None),
-            (200, {"id": "a1", "genres": ["indie soul"]}, None),
-            (200, {"id": "a2", "genres": ["grime"]}, None),
+            (
+                200,
+                {
+                    "artists": [
+                        {"id": "a1", "genres": ["indie soul"]},
+                        {"id": "a2", "genres": ["grime"]},
+                    ]
+                },
+                None,
+            ),
         ]
     )
     client = SpotifyClient(FakeOAuth(), session=session, sleep=lambda _s: None)
-    genres = client.fetch_artist_genres(["a1", "a2"], cache_path=tmp_path / "g.json", workers=1)
+    genres = client.fetch_artist_genres(["a1", "a2"], cache_path=tmp_path / "g.json")
     assert genres == {"a1": ["indie soul"], "a2": ["grime"]}
-    assert any(url.endswith("/artists") for _, url in session.calls)
-    assert any("/artists/a1" in url for _, url in session.calls)
+    assert len(session.calls) == 1
+    assert session.calls[0][1].endswith("/artists")
+
+
+def test_artist_genre_batch_403_skips_individual_fetches(tmp_path):
+    session = ScriptedSession(
+        [
+            (403, {"error": {"status": 403, "message": "Forbidden"}}, None),
+        ]
+    )
+    client = SpotifyClient(FakeOAuth(), session=session, sleep=lambda _s: None)
+    ids = [f"a{i}" for i in range(8)]
+    genres = client.fetch_artist_genres(ids, cache_path=tmp_path / "g.json")
+    assert genres == {aid: [] for aid in ids}
+    assert client._batch_artists_supported is False
+    assert len(session.calls) == 1
+    assert session.calls[0][1].endswith("/artists")
+    assert session.scripts == []
+    # Empty placeholders are not cached, so a later quota upgrade can retry.
+    cache_file = tmp_path / "g.json"
+    assert not cache_file.exists() or json.loads(cache_file.read_text()) == {}
+
+
+def test_artist_genre_batch_404_and_405_skip_individual_fetches(tmp_path):
+    for status in (404, 405):
+        session = ScriptedSession([(status, {"error": {"message": "gone"}}, None)])
+        client = SpotifyClient(FakeOAuth(), session=session, sleep=lambda _s: None)
+        genres = client.fetch_artist_genres(["x", "y"], cache_path=tmp_path / f"g{status}.json")
+        assert genres == {"x": [], "y": []}
+        assert len(session.calls) == 1
+        assert not any("/artists/x" in url or "/artists/y" in url for _, url in session.calls)
+
+
+def test_artist_genre_second_call_does_not_retry_failed_batch():
+    session = ScriptedSession(
+        [(403, {"error": {"message": "Forbidden"}}, None)]
+    )
+    client = SpotifyClient(FakeOAuth(), session=session, sleep=lambda _s: None)
+    assert client.fetch_artist_genres(["a1"], cache_path=None) == {"a1": []}
+    assert client.fetch_artist_genres(["a2", "a3"], cache_path=None) == {"a2": [], "a3": []}
+    assert len(session.calls) == 1
 
 
 def test_rate_limit_honors_retry_after():

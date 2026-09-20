@@ -20,7 +20,7 @@ The scan uses only documented Spotify Web API endpoints. It does **not** call re
 | --- | --- | --- |
 | Liked Songs | `GET /me/tracks` | Paginated, max 50 per page. Local files and missing tracks are skipped. |
 | Album release year | `album.release_date` on each saved track | No extra album lookup. |
-| Artist genres | `GET /artists?ids=` (50/id) or `GET /artists/{id}` | Batch `GET /artists` was **removed for Development Mode** in February 2026. Extended Quota apps still have it. The client tries the batch path, then falls back to concurrent single-artist fetches with `429` / `Retry-After` backoff. |
+| Artist genres | `GET /artists?ids=` (50/id) | Batch `GET /artists` was **removed for Development Mode** in February 2026 (often **403 Forbidden**). Extended Quota apps still have it. On 403/404/405 the scan **does not** fall back to thousands of `GET /artists/{id}` calls — genres stay empty and clustering uses years, artist names, and save dates. |
 | Optional listening signal | `GET /me/top/artists` (`user-top-read`) | Still available. Used only as an overlap hint, never as a fake “taste API”. |
 | Save recency | `added_at` on saved tracks | 90-day and calendar-year “saved in” slices when they are distinctive. |
 
@@ -51,12 +51,13 @@ Suggestions are **not** a fixed taxonomy (no hardcoded “Workout / Chill / 2010
    ```
 
    Do not use `localhost`; Spotify treats it as different from `127.0.0.1`.
+   Leave this URI even if you will log in from a phone (see [Login from a phone](#login-from-a-phone-paste-callback)). The loopback page does not need to load.
 3. Open the app → **Settings**. Copy **Client ID** and **Client Secret**.
 4. Confirm the redirect URI is listed. Save.
 5. Development Mode notes (as of the February 2026 Web API changes):
    - The app **owner needs Spotify Premium** or the app will not work.
    - New Dev Mode apps are limited to **5 authorized users**.
-   - Batch metadata endpoints (`GET /artists`, `GET /albums`, `GET /tracks`) are gone in Dev Mode; this CLI already handles that.
+    - Batch metadata endpoints (`GET /artists`, `GET /albums`, `GET /tracks`) are gone in Dev Mode (403). This CLI skips per-artist genre lookups and still analyzes by year / name / save date.
    - Extended Quota apps keep the older endpoints; the client is compatible with both.
 
 ## Install
@@ -90,9 +91,15 @@ Never commit `.env`, OAuth token caches, or Client Secrets.
 
 ## First-run OAuth
 
-The CLI uses the **Authorization Code** flow via Spotipy’s `SpotifyOAuth`, with a local redirect listener on `http://127.0.0.1:8888/callback`.
+The CLI uses the **Authorization Code** flow via Spotipy’s `SpotifyOAuth`. Desktop is the default: a local redirect listener on `http://127.0.0.1:8888/callback` plus an opened browser.
 
-On first `analyze` or `apply --apply` it opens a browser (or prints a URL with `--no-browser`). Approve access. The refresh token is stored in `.spotify_token_cache` in the working directory (gitignored).
+On first `analyze` or `apply --apply` it opens a browser (or prints a URL with `--no-browser`, which still uses the localhost listener). Approve access. The refresh token is stored in `.spotify_token_cache` in the working directory (gitignored).
+
+You can also log in without analyzing:
+
+```bash
+spotify-organizer auth
+```
 
 Scopes requested (one login covers later apply):
 
@@ -102,12 +109,51 @@ Scopes requested (one login covers later apply):
 
 Write scopes are requested up front so apply does not force a second consent. They are unused until `--apply`.
 
+### Login from a phone (paste callback)
+
+Use this when you cannot open a browser on the same machine (phone, SSH, no GUI). It still uses **Authorization Code**; it does **not** start a listener and does **not** open a local browser.
+
+**Device Authorization Grant is not available** for a normal app created in the Spotify Developer Dashboard. That TV/console “enter this code” flow is allowlisted; a custom app gets `unauthorized_client`. This CLI does not implement device flow as a login path.
+
+Keep the Dashboard Redirect URI exactly:
+
+```text
+http://127.0.0.1:8888/callback
+```
+
+Loopback `http://127.0.0.1` is still allowed. Do not change it for the phone path — Spotify will redirect there even if the page fails to load. You copy the address bar.
+
+1. On the computer running the CLI:
+
+   ```bash
+   spotify-organizer auth --paste
+   ```
+
+   Or combine login + dry-run analyze:
+
+   ```bash
+   spotify-organizer analyze --paste-auth
+   ```
+
+2. Open the printed `https://accounts.spotify.com/authorize?...` URL on your phone and approve access.
+3. Spotify redirects to `http://127.0.0.1:8888/callback?code=...&state=...`. The page may fail to load. Copy the **full address** from the address bar (or just the `code` query parameter).
+4. Paste it into the CLI and press Enter. Tokens are written to `.spotify_token_cache` (never printed). After `auth --paste`, run `spotify-organizer analyze` as usual.
+
+`--paste-auth` on `analyze` / `apply` uses the cache if you already logged in. Analyze remains dry-run; playlists are still never created unless you later run `apply --apply`.
+
 ## Commands
 
 ```bash
 # Default = analyze (dry-run)
 spotify-organizer
 spotify-organizer analyze
+
+# Log in only (desktop browser + localhost callback)
+spotify-organizer auth
+
+# Phone / no local browser: paste the redirect URL or code
+spotify-organizer auth --paste
+spotify-organizer analyze --paste-auth
 
 # Re-run suggestions from a saved snapshot (no Spotify calls)
 spotify-organizer analyze --library-json reports/library.json
