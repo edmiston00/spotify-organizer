@@ -1,0 +1,40 @@
+# Secrets and local credentials — never commit
+.env
+.env.*
+!.env.example
+
+# OAuth / token caches
+.spotify_token_cache
+.spotipyoauthcache
+.cache
+*.cache
+.spotify_cache
+
+# Generated reports (keep directory)
+reports/*
+!reports/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.envrc
+
+# Test / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

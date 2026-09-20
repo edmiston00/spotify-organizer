@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spotify-organizer"
+version = "0.1.0"
+description = "Local CLI that scans Spotify Liked Songs and suggests data-driven playlists (review first)."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Spotify Organizer" }]
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "requests>=2.31.0",
+    "spotipy>=2.24.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+spotify-organizer = "spotify_organizer.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["spotify_organizer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
