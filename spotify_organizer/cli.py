@@ -12,6 +12,7 @@ from spotify_organizer.auth import build_oauth
 from spotify_organizer.config import MUSICBRAINZ_CACHE, ConfigError, load_settings
 from spotify_organizer.enrich import (
     apply_labels_to_library,
+    apply_local_fallbacks,
     enrich_artists,
     enrichment_summary,
     load_unique_artists_json,
@@ -226,6 +227,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
                 f"(~1 req/sec, cache {args.genre_cache})"
             )
             cache = enrich_artists(artists, cache=cache, progress=print)
+            apply_local_fallbacks(cache)
             propagate_coartist_genres(library, cache)
         elif not cache.artists:
             print(
@@ -234,6 +236,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
         else:
+            apply_local_fallbacks(cache)
             propagate_coartist_genres(library, cache)
         apply_labels_to_library(library, cache)
 
@@ -310,7 +313,9 @@ def _cmd_enrich(args: argparse.Namespace) -> int:
         limit=args.limit,
     )
     inherited = propagate_coartist_genres(library, cache)
-    print(f"Co-artist fallback filled {inherited} artists")
+    extra = apply_local_fallbacks(cache)
+    inherited += propagate_coartist_genres(library, cache)
+    print(f"Co-artist fallback filled {inherited} artists; local fallbacks {extra}")
     apply_labels_to_library(library, cache)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

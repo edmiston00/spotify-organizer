@@ -16,7 +16,7 @@ from spotify_organizer.musicbrainz import (
     MusicBrainzClient,
     MusicBrainzError,
 )
-from spotify_organizer.style_map import META_LABELS, normalize_label
+from spotify_organizer.style_map import META_LABELS, labels_from_free_text, normalize_label
 
 Progress = Callable[[str], None]
 
@@ -59,9 +59,26 @@ KNOWN_ARTIST_FALLBACKS: dict[str, list[str]] = {
     "lcd soundsystem": ["alternative dance", "dance-punk", "electronic"],
     "chet faker": ["indie electronic", "alternative r&b"],
     "rac": ["indietronica", "electronic", "indie pop"],
-    "go freek": ["tech house", "house"],
+    "cassian": ["house", "melodic house", "electronic"],
+    "crooked colours": ["indie dance", "electronic", "house"],
+    "310babii": ["hip hop", "trap"],
+    "isolate.exe": ["phonk", "trap", "hip hop"],
+    "electric guest": ["indie pop", "synth-pop"],
+    "dombresky": ["house", "tech house", "electronic"],
+    "shiba san": ["house", "tech house"],
+    "ben bohmer": ["melodic house", "progressive house", "electronic"],
+    "nils hoffmann": ["house", "techno", "electronic"],
+    "set mo": ["house", "electronic"],
+    "memba": ["bass music", "electronic", "future bass"],
+    "choomba": ["house", "electronic"],
+    "nox vahn": ["melodic house", "organic house", "electronic"],
+    "the funk hunters": ["funk", "electronic", "house"],
+    "oliver anthony music": ["americana", "country", "folk"],
+    "blu j": ["edm", "electronic"],
+    "humans": ["electronic", "indietronica"],
     "mk": ["house", "tech house"],
     "flight facilities": ["nu-disco", "house", "electronic"],
+    "go freek": ["tech house", "house"],
 }
 
 NAME_HEURISTICS: list[tuple[re.Pattern[str], list[str]]] = [
@@ -255,14 +272,34 @@ def _lookup_one(
     return lookup
 
 
+def apply_local_fallbacks(cache: LookupCache) -> int:
+    """Re-apply name/disambiguation fallbacks to unlabeled cached artists."""
+    filled = 0
+    for lookup in cache.artists.values():
+        if lookup.genres or lookup.tags or lookup.fallback_genres:
+            continue
+        _apply_fallbacks(lookup)
+        if lookup.fallback_genres:
+            filled += 1
+    if filled:
+        cache.save()
+    return filled
+
+
 def _apply_fallbacks(lookup: ArtistLookup) -> None:
     if lookup.genres or lookup.tags:
         return
     guessed = infer_genres_from_name(lookup.query)
+    if not guessed:
+        guessed = infer_genres_from_disambiguation(lookup.disambiguation)
     if guessed:
         lookup.fallback_genres = guessed
-        if lookup.source in {"", "musicbrainz-empty", "musicbrainz"}:
+        if lookup.source in {"", "musicbrainz-empty", "musicbrainz", "coartist"}:
             lookup.source = "fallback"
+
+
+def infer_genres_from_disambiguation(text: str) -> list[str]:
+    return labels_from_free_text(text)
 
 
 def infer_genres_from_name(name: str) -> list[str]:
@@ -280,7 +317,9 @@ def infer_genres_from_name(name: str) -> list[str]:
 
 
 def _norm(value: str) -> str:
-    text = (value or "").casefold()
-    text = text.replace("ü", "u").replace("ÿ", "y")
+    import unicodedata
+
+    text = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode("ascii")
+    text = text.casefold()
     text = re.sub(r"[^\w\s&]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()

@@ -24,7 +24,6 @@ META_LABELS = {
     "australian",
     "german",
     "french",
-    "english",
     "irish",
     "scottish",
     "welsh",
@@ -64,6 +63,22 @@ META_LABELS = {
     "2008 universal fire victim",
     "under 2000 listeners",
     "seen-live",
+    "sxsw",
+    "top 100",
+    "best rapper",
+    "film",
+    "criminal",
+    "austin city limits",
+    "switzerland",
+    "california",
+    "california music",
+    "english",
+    "ramp",
+    "moment",
+    "amerie",
+    "g unit",
+    "dr dre",
+    "eminem",
     "70s",
     "80s",
     "90s",
@@ -195,15 +210,19 @@ _STYLE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("hybrid trap", ("bass-edm", "electronic")),
     ("trap edm", ("bass-edm", "electronic")),
     ("trap", ("southern-trap", "hip-hop")),
+    ("rap rock", ("hip-hop",)),
+    ("trap rap", ("southern-trap", "hip-hop")),
     ("drill", ("hip-hop",)),
     ("grime", ("hip-hop",)),
     ("boom bap", ("hip-hop",)),
+    ("hardcore hip hop", ("hip-hop",)),
     ("g funk", ("hip-hop",)),
+    ("g-funk", ("hip-hop",)),
     ("conscious hip hop", ("hip-hop",)),
-    ("alternative hip hop", ("hip-hop", "alt-indie")),
+    ("alternative hip hop", ("hip-hop",)),
     ("jazz rap", ("hip-hop",)),
     ("cloud rap", ("hip-hop",)),
-    ("pop rap", ("hip-hop", "pop-rnb")),
+    ("pop rap", ("hip-hop",)),
     ("hip hop", ("hip-hop",)),
     ("hip-hop", ("hip-hop",)),
     ("rap", ("hip-hop",)),
@@ -248,7 +267,7 @@ _STYLE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("electronica", ("electronic", "melodic-electronic")),
     ("nu disco", ("house-club", "electronic")),
     ("nu-disco", ("house-club", "electronic")),
-    ("disco", ("jam-funk", "house-club")),
+    ("disco", ("house-club", "electronic")),
     # Bass / live electronic
     ("live electronic", ("bass-edm", "electronic", "jam-funk")),
     ("drum and bass", ("bass-edm", "electronic")),
@@ -432,8 +451,71 @@ def labels_to_playlist_ids(labels: list[str]) -> set[str]:
 
 
 def map_artist_labels(genres: list[str], tags: list[str], fallback: list[str] | None = None) -> set[str]:
-    combined = list(genres) + list(tags) + list(fallback or [])
-    return labels_to_playlist_ids(combined)
+    return labels_to_playlist_ids(primary_style_labels(genres, tags, fallback))
+
+
+def primary_style_labels(
+    genres: list[str],
+    tags: list[str],
+    fallback: list[str] | None = None,
+    *,
+    limit: int = 4,
+) -> list[str]:
+    """Keep dominant MusicBrainz genres so folksonomy junk cannot jump families.
+
+    Snoop Dogg is tagged hip-hop first, then stray house/DnB votes; those extras
+    must not land a rapper in a club playlist.
+    """
+    primary: list[str] = []
+    for label in genres:
+        if is_meta_label(label) or label in primary:
+            continue
+        primary.append(label)
+        if len(primary) >= limit:
+            break
+    if not primary:
+        for label in tags:
+            if is_meta_label(label) or label in primary:
+                continue
+            primary.append(label)
+            if len(primary) >= limit:
+                break
+        for label in fallback or []:
+            if label not in primary:
+                primary.append(label)
+        return primary
+
+    primary_ids = labels_to_playlist_ids(primary)
+    extras: list[str] = []
+    for label in list(tags) + list(fallback or []):
+        if is_meta_label(label) or label in primary or label in extras:
+            continue
+        tag_ids = labels_to_playlist_ids([label])
+        if tag_ids and tag_ids <= primary_ids:
+            extras.append(label)
+        if len(extras) >= 6:
+            break
+    return primary + extras
+
+
+def labels_from_free_text(text: str) -> list[str]:
+    """Pull style keywords out of a MusicBrainz disambiguation comment."""
+    normalized = normalize_label(text)
+    if not normalized:
+        return []
+    tokens = set(normalized.split())
+    found: list[str] = []
+    for key, _playlist_ids in _RULES_LONGEST_FIRST:
+        key_n = normalize_label(key)
+        if not key_n or key_n in found:
+            continue
+        parts = key_n.split()
+        if len(parts) == 1:
+            if key_n in tokens:
+                found.append(key_n)
+        elif key_n in normalized:
+            found.append(key_n)
+    return found
 
 
 def gb_name(name: str) -> str:
@@ -452,6 +534,9 @@ def _token_match(label: str, key: str) -> bool:
     label_parts = label.split()
     key_parts = key.split()
     n = len(key_parts)
-    if n == 0 or n > len(label_parts):
+    # Unigrams must match the whole label ("funk" must not fire inside "g funk").
+    if n <= 1:
+        return False
+    if n > len(label_parts):
         return False
     return any(label_parts[i : i + n] == key_parts for i in range(len(label_parts) - n + 1))

@@ -92,6 +92,48 @@ def test_meta_and_era_tags_are_ignored():
     assert playlists == set()
 
 
+def test_hardcore_hip_hop_is_not_metal():
+    playlists = labels_to_playlist_ids(["hardcore hip hop", "boom bap"])
+    assert playlists == {"hip-hop"}
+
+
+def test_g_funk_is_not_jam_or_house():
+    playlists = labels_to_playlist_ids(["g-funk", "west coast hip hop"])
+    assert "hip-hop" in playlists
+    assert "jam-funk" not in playlists
+    assert "house-club" not in playlists
+
+
+def test_snoop_folksonomy_junk_does_not_become_house():
+    playlists = map_artist_labels(
+        genres=[
+            "hip hop",
+            "gangsta rap",
+            "g-funk",
+            "west coast hip hop",
+            "afro house",
+            "dance",
+            "drum and bass",
+            "house",
+            "rock",
+        ],
+        tags=["hip hop", "dance", "house"],
+    )
+    assert "hip-hop" in playlists
+    assert "house-club" not in playlists
+    assert "bass-edm" not in playlists
+    assert "rock" not in playlists
+
+
+def test_disambiguation_text_yields_house():
+    from spotify_organizer.style_map import labels_from_free_text
+
+    labels = labels_from_free_text("house, techno DJ/producer from Berlin")
+    playlists = labels_to_playlist_ids(labels)
+    assert "house-club" in playlists
+    assert "electronic" in playlists
+
+
 def test_ska_punk_overlaps_reggae_and_rock():
     playlists = labels_to_playlist_ids(["ska punk", "ska", "reggae"])
     assert "reggae-ska" in playlists
@@ -103,6 +145,44 @@ def test_dom_dolla_name_fallback_is_house():
     playlists = labels_to_playlist_ids(labels)
     assert "house-club" in playlists
     assert "electronic" in playlists
+
+
+def test_unmapped_mb_hit_uses_name_fallback():
+    from spotify_organizer.models import Library
+    from spotify_organizer.musicbrainz import ArtistLookup, LookupCache
+    from spotify_organizer.suggest import discover_style_suggestions
+    from tests.factories import make_track
+
+    tracks = [
+        make_track(
+            f"fish{i:03d}",
+            f"Fish {i}",
+            artists=[("fish", "FISHER")],
+            genres=[],
+            year=2018,
+            added_at="2020-01-01T00:00:00Z",
+        )
+        for i in range(20)
+    ]
+    cache = LookupCache.__new__(LookupCache)
+    cache.path = None  # type: ignore[assignment]
+    cache.artists = {
+        "id:fish": ArtistLookup(
+            query="FISHER",
+            spotify_id="fish",
+            found=True,
+            disambiguation="trance/EDM singer/songwriter Kathy Fisher",
+            genres=["vocal trance"],
+            tags=["vocal trance"],
+            source="musicbrainz",
+        )
+    }
+    suggestions = discover_style_suggestions(Library(tracks=tracks), cache=cache, min_tracks=10)
+    names = " ".join(s.name for s in suggestions)
+    assert "House" in names or "Electronic" in names
+    leftover = next((s for s in suggestions if "Needs Review" in s.name), None)
+    if leftover:
+        assert "spotify:track:fish000" not in leftover.track_uris
 
 
 def test_lil_prefix_heuristic_is_hip_hop():

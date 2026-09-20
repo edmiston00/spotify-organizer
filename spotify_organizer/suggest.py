@@ -18,6 +18,7 @@ from spotify_organizer.style_map import (
     STYLE_SAMPLE_SIZE,
     labels_to_playlist_ids,
     leftover_playlist,
+    primary_style_labels,
 )
 
 MIN_SUGGESTIONS = 5
@@ -176,16 +177,19 @@ def _track_style_assignment(
         lookup = lookups.get(artist.id) or lookups.get(f"name:{artist.name.casefold()}")
         artist_labels: list[str] = []
         if lookup is not None:
-            artist_labels = list(lookup.style_labels)
+            artist_labels = primary_style_labels(
+                lookup.genres, lookup.tags, lookup.fallback_genres
+            )
             if lookup.genres or lookup.tags:
                 saw_mb = True
             elif lookup.fallback_genres:
                 saw_fallback = True
-        if not artist_labels:
+        if not artist_labels or not labels_to_playlist_ids(artist_labels):
             guessed = infer_genres_from_name(artist.name)
             if guessed:
                 artist_labels = guessed
                 saw_fallback = True
+                saw_mb = False
         labels.extend(artist_labels)
     if not labels and track.genres:
         labels = list(track.genres)
@@ -239,16 +243,13 @@ def _build_style_suggestion(
 
 
 def _diverse_samples(members: list[Track], n: int) -> list[str]:
-    seen_artists: set[str] = set()
-    picked: list[Track] = []
+    counts: Counter[str] = Counter()
+    first: dict[str, Track] = {}
     for track in members:
-        primary = track.artists[0].id if track.artists else track.id
-        if primary in seen_artists and len(picked) + 1 < n:
-            continue
-        picked.append(track)
-        seen_artists.add(primary)
-        if len(picked) >= n:
-            break
+        key = track.artists[0].id if track.artists else track.id
+        counts[key] += 1
+        first.setdefault(key, track)
+    picked = [first[key] for key, _count in counts.most_common(n)]
     if len(picked) < min(n, len(members)):
         for track in members:
             if track in picked:

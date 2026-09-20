@@ -1,0 +1,171 @@
+{
+  "artists_cached": 1652,
+  "musicbrainz_with_tags": 970,
+  "musicbrainz_empty": 222,
+  "fallback_or_coartist": 421,
+  "still_unlabeled": 261,
+  "library_tracks": 1913,
+  "tracks_with_labeled_artist": 1677,
+  "top_labels": [
+    [
+      "electronic",
+      415
+    ],
+    [
+      "hip hop",
+      396
+    ],
+    [
+      "house",
+      233
+    ],
+    [
+      "pop",
+      197
+    ],
+    [
+      "trap",
+      182
+    ],
+    [
+      "edm",
+      172
+    ],
+    [
+      "rock",
+      170
+    ],
+    [
+      "dance",
+      160
+    ],
+    [
+      "alternative rock",
+      105
+    ],
+    [
+      "electronica",
+      102
+    ],
+    [
+      "southern hip hop",
+      101
+    ],
+    [
+      "dubstep",
+      99
+    ],
+    [
+      "progressive house",
+      88
+    ],
+    [
+      "pop rap",
+      88
+    ],
+    [
+      "deep house",
+      85
+    ],
+    [
+      "electro house",
+      75
+    ],
+    [
+      "electropop",
+      74
+    ],
+    [
+      "tech house",
+      72
+    ],
+    [
+      "drum and bass",
+      72
+    ],
+    [
+      "future bass",
+      71
+    ],
+    [
+      "randb",
+      66
+    ],
+    [
+      "indie rock",
+      64
+    ],
+    [
+      "indie pop",
+      63
+    ],
+    [
+      "pop rock",
+      61
+    ],
+    [
+      "rap",
+      58
+    ],
+    [
+      "trance",
+      57
+    ],
+    [
+      "gangsta rap",
+      56
+    ],
+    [
+      "contemporary randb",
+      56
+    ],
+    [
+      "techno",
+      55
+    ],
+    [
+      "bass house",
+      54
+    ],
+    [
+      "melodic house",
+      53
+    ],
+    [
+      "hard rock",
+      52
+    ],
+    [
+      "club",
+      47
+    ],
+    [
+      "dance pop",
+      46
+    ],
+    [
+      "melodic techno",
+      44
+    ],
+    [
+      "indietronica",
+      43
+    ],
+    [
+      "alternative",
+      39
+    ],
+    [
+      "east coast hip hop",
+      39
+    ],
+    [
+      "downtempo",
+      39
+    ],
+    [
+      "metal",
+      38
+    ]
+  ]
+}
